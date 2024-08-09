@@ -13,6 +13,11 @@
     </style>
   </head>
   <body>
+    <div id="loading-screen" style="display: none">
+      <p>Loading (Waiting for server ETA 1m)...</p>
+      <!-- Add a spinner or other loading indicator -->
+    </div>
+
     <div id="container">
       <h2>Draw a Tamil Digit</h2>
       <canvas id="canvas" width="400" height="400"></canvas>
@@ -87,6 +92,7 @@
       function submitDrawing() {
         const dataURL = canvas.toDataURL("image/jpeg", 0.8);
 
+        // fetch("https://thdrs-backend.onrender.com/predict", {
         fetch("https://thdrs-backend.onrender.com/predict", {
           method: "POST",
           body: JSON.stringify({ image: dataURL }),
@@ -100,6 +106,35 @@
             console.error("Error:", error);
           });
       }
+    </script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("loading-screen").style.display = "block";
+        checkServerStatus();
+      });
+
+      const checkServerStatus = async () => {
+        fetch("https://thdrs-backend.onrender.com/health-check", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.status === 200) {
+              document.getElementById("loading-screen").style.display = "none";
+              document.getElementById("container").style.display = "block";
+              // Show your main content
+            }
+          })
+          .catch((error) => {
+            document.getElementById("loading-screen").style.display = "block";
+            document.getElementById("container").style.display = "none";
+          });
+      };
+
+      // Call this function on page load and then periodically
+      checkServerStatus();
+      setInterval(checkServerStatus, 5000); // Check every 5 seconds
     </script>
   </body>
 </html>
