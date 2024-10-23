@@ -15,12 +15,11 @@
   <body>
     <div id="loading-screen" style="display: none">
       <p>Loading (Waiting for server ETA 1m)...</p>
-      <!-- Add a spinner or other loading indicator -->
     </div>
 
     <div id="container">
       <h2>Draw a Tamil Digit</h2>
-      <canvas id="canvas" width="400" height="400"></canvas>
+      <canvas id="canvas" width="800" height="400"></canvas>
       <br />
       <button onclick="clearCanvas()">Clear</button>
       <h3>Prediction: <span id="prediction"></span></h3>
@@ -91,16 +90,28 @@
 
       function submitDrawing() {
         const dataURL = canvas.toDataURL("image/jpeg", 0.8);
-
-        // fetch("https://thdrs-backend.onrender.com/predict", {
         fetch("https://thdrs-backend.onrender.com/predict", {
+          // fetch("http://127.0.0.1:5000/predict", {
           method: "POST",
           body: JSON.stringify({ image: dataURL }),
           headers: { "Content-Type": "application/json" },
         })
           .then((response) => response.json())
           .then((data) => {
-            document.getElementById("prediction").innerText = data.prediction;
+            const predictions = data.predictions;
+
+            predictions.forEach((prediction) => {
+              const { label, box } = prediction;
+              const [x, y, w, h] = box;
+
+              ctx.strokeStyle = "green";
+              ctx.lineWidth = 2;
+              ctx.strokeRect(x, y, w, h);
+
+              ctx.fillStyle = "red";
+              ctx.font = "20px Arial";
+              ctx.fillText(label, x + w, y - 5);
+            });
           })
           .catch((error) => {
             console.error("Error:", error);
@@ -116,11 +127,13 @@
 
       const checkServerStatus = async () => {
         fetch("https://thdrs-backend.onrender.com/health-check", {
+          // fetch("http://127.0.0.1:5000/health-check", {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         })
           .then((response) => response.json())
           .then((data) => {
+            console.log(data);
             if (data.status === 200) {
               document.getElementById("loading-screen").style.display = "none";
               document.getElementById("container").style.display = "block";
@@ -133,9 +146,8 @@
           });
       };
 
-      // Call this function on page load and then periodically
       checkServerStatus();
-      setInterval(checkServerStatus, 5000); // Check every 5 seconds
+      setInterval(checkServerStatus, 10000);
     </script>
   </body>
 </html>
